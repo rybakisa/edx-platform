@@ -814,6 +814,7 @@ urlpatterns += (
 if settings.FEATURES.get('EMBARGO'):
     urlpatterns += (
         url(r'^embargo/', include('openedx.core.djangoapps.embargo.urls')),
+        url(r'^api/embargo/', include('openedx.core.djangoapps.embargo.urls'), namespace='api_embargo'),
     )
 
 # Survey Djangoapp
