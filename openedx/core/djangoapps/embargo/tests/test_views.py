@@ -100,7 +100,7 @@ class CourseAccessMessageViewTest(CacheIsolationTestCase, UrlResetMixin):
 @mock.patch.dict(settings.FEATURES, {'EMBARGO': True})
 class CheckCourseAccessViewTest(CourseApiFactoryMixin, ModuleStoreTestCase):
     """ Tests the course access check endpoint. """
-    URL = reverse('api_embargo:v1_course_access')
+    URL = reverse('v1_course_access')
 
     def setUp(self):
         super(CheckCourseAccessViewTest, self).setUp()
