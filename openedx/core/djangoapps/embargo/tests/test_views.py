@@ -11,6 +11,7 @@ from mock import patch
 
 from .factories import CountryFactory, CountryAccessRuleFactory, RestrictedCourseFactory
 from .. import messages
+from lms.djangoapps.course_api.tests.mixins import CourseApiFactoryMixin
 from openedx.core.djangolib.testing.utils import CacheIsolationTestCase, skip_unless_lms
 from openedx.core.djangoapps.theming.tests.test_util import with_comprehensive_theme
 from student.tests.factories import ContentTypeFactory, PermissionFactory, UserFactory
@@ -97,34 +98,49 @@ class CourseAccessMessageViewTest(CacheIsolationTestCase, UrlResetMixin):
 
 @skip_unless_lms
 @mock.patch.dict(settings.FEATURES, {'EMBARGO': True})
-class CheckCourseAccessViewTest(ModuleStoreTestCase):
+class CheckCourseAccessViewTest(CourseApiFactoryMixin, ModuleStoreTestCase):
     """ Tests the course access check endpoint. """
     URL = reverse('v1_course_access')
 
     def setUp(self):
         super(CheckCourseAccessViewTest, self).setUp()
-        user, password = self.create_staff_user()
-        self.client.login(username=user.username, password=password)
+        user = self.create_user("staff", is_staff=True)
+        self.client.login(username=user.username, password='edx')
         self.course_id = str(CourseFactory().id)
         self.request_data = {
             'course_ids': [self.course_id],
             'ip_address': '0.0.0.0',
-            'user': user,
+            'user': self.user,
         }
 
     def test_course_access_endpoint_with_unrestricted_course(self):
         response = self.client.get(self.URL, data=self.request_data)
         expected_response = {'Access': True}
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected_response)
 
     def test_course_access_endpoint_with_restricted_course(self):
         CountryAccessRuleFactory(restricted_course=RestrictedCourseFactory(course_key=self.course_id))
 
+        self.user.is_staff = False
+        self.user.save()
         # Appear to make a request from an IP in the blocked country
         with mock.patch.object(pygeoip.GeoIP, 'country_code_by_addr') as mock_ip:
             mock_ip.return_value = 'US'
             response = self.client.get(self.URL, data=self.request_data)
         expected_response = {'Access': False}
-        self.assertEqual(response.code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data, expected_response)
+
+    def test_course_access_with_logged_out_user(self):
+        self.client.logout()
+        response = self.client.get(self.URL, data=self.request_data)
+        self.assertEqual(response.status_code, 403)
+
+    def test_course_access_with_non_staff_user(self):
+        user = self.create_user('non-staff', is_staff=False)
+        self.client.login(username=user.username, password='edx')
+
+        response = self.client.get(self.URL, data=self.request_data)
+        self.assertEqual(response.status_code, 403)
+

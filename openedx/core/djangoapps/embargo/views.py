@@ -1,5 +1,6 @@
 """Views served by the embargo app. """
 
+from django.contrib.auth.models import User
 from django.http import Http404
 from django.views.generic.base import View
 from edx_rest_framework_extensions.authentication import JwtAuthentication
@@ -29,16 +30,20 @@ class CheckCourseAccessView(APIView):
 
         """
         course_ids = request.GET.getlist('course_ids', [])
-        user = request.GET.get('user')
+        username = request.GET.get('user')
         user_ip_address = request.GET.get('ip_address')
-        access = False
 
-        response = {'Access': access}
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            user = None
+
+        response = {'Access': True}
 
         if course_ids or user or user_ip_address:
             for course_id in course_ids:
                 if not check_course_access(CourseKey.from_string(course_id), user, user_ip_address):
-                    access = False
+                    response['Access'] = False
                     break
         return Response(response)
 
