@@ -143,4 +143,3 @@ class CheckCourseAccessViewTest(CourseApiFactoryMixin, ModuleStoreTestCase):
 
         response = self.client.get(self.URL, data=self.request_data)
         self.assertEqual(response.status_code, 403)
-
