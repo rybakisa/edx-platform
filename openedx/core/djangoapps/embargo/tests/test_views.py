@@ -66,7 +66,7 @@ class CourseAccessMessageViewTest(CacheIsolationTestCase, UrlResetMixin):
         # Custom override specified for the "embargo" message
         # for backwards compatibility with previous versions
         # of the embargo app.
-        url = reverse('embargo_blocked_message', kwargs={
+        url = reverse('embargo:blocked_message', kwargs={
             'access_point': access_point,
             'message_key': "embargo"
         })
@@ -78,7 +78,7 @@ class CourseAccessMessageViewTest(CacheIsolationTestCase, UrlResetMixin):
 
     def _load_page(self, access_point, message_key, expected_status=200):
         """Load the message page and check the status code. """
-        url = reverse('embargo_blocked_message', kwargs={
+        url = reverse('embargo:blocked_message', kwargs={
             'access_point': access_point,
             'message_key': message_key
         })
@@ -100,7 +100,7 @@ class CourseAccessMessageViewTest(CacheIsolationTestCase, UrlResetMixin):
 @mock.patch.dict(settings.FEATURES, {'EMBARGO': True})
 class CheckCourseAccessViewTest(CourseApiFactoryMixin, ModuleStoreTestCase):
     """ Tests the course access check endpoint. """
-    URL = reverse('v1_course_access')
+    URL = reverse('api_embargo:v1_course_access')
 
     def setUp(self):
         super(CheckCourseAccessViewTest, self).setUp()
